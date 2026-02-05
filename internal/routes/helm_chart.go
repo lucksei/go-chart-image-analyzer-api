@@ -3,12 +3,10 @@ package routes
 import (
 	"fmt"
 	"net/http"
-	"strings"
 	"test/go_helm_chart_image_api/internal/models"
 	"test/go_helm_chart_image_api/internal/utils"
 
 	"github.com/gin-gonic/gin"
-	"github.com/goccy/go-yaml"
 )
 
 func HelmChartPost(c *gin.Context) {
@@ -33,21 +31,8 @@ func HelmChartPost(c *gin.Context) {
 			panic(err)
 		}
 
-		for key, value := range rendered {
-			if strings.Contains(key, ".yaml") {
-				fmt.Printf("* Template: %s\n", key)
-				var template map[string]interface{}
-				yaml.Unmarshal([]byte(value), &template)
-
-				var containersSpecList []any
-				utils.ContainersSpecSearch(template, &containersSpecList)
-				for _, containers := range containersSpecList {
-					for _, container := range containers.([]any) {
-						fmt.Printf("%v\n", container.(map[string]any)["image"])
-					}
-				}
-			}
-		}
+		images := utils.GetImagesFromRendered(rendered)
+		fmt.Printf("%v\n", images)
 	}()
 
 	c.Writer.Header().Set("Location", fmt.Sprintf("/api/helm-chart/%s", helmChartId))
