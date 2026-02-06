@@ -3,6 +3,7 @@ package main
 import (
 	"test/go_helm_chart_image_api/internal/routes"
 	"test/go_helm_chart_image_api/internal/utils"
+	"test/go_helm_chart_image_api/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,6 +17,10 @@ func main() {
 	helmChartGroup := apiGroup.Group("/helm-chart")
 	helmChartGroup.POST("", routes.HelmChartPost)
 	helmChartGroup.GET("/:id", routes.HelmChartGet)
+
+	// NOTE: Initialize the result store and add it to the Gin context
+	resultStore := utils.NewResultStore()
+	router.Use(middleware.ResultStore(resultStore))
 
 	// NOTE: Very important to initialize helm sdk settings before running API
 	err := utils.InitHelmSettings()
