@@ -11,16 +11,17 @@ import (
 func main() {
 	router := gin.Default()
 
+	// NOTE: Initialize the result store BEFORE defining the methods, it will panic if not.
+	// This is required to access the result store inside the endpoints
+	resultStore := utils.NewResultStore()
+	router.Use(middleware.ResultStore(resultStore))
+
 	apiGroup := router.Group("/api")
 	apiGroup.GET("/health", routes.Health)
 
 	helmChartGroup := apiGroup.Group("/helm-chart")
 	helmChartGroup.POST("", routes.HelmChartPost)
 	helmChartGroup.GET("/:id", routes.HelmChartGet)
-
-	// NOTE: Initialize the result store and add it to the Gin context
-	resultStore := utils.NewResultStore()
-	router.Use(middleware.ResultStore(resultStore))
 
 	// NOTE: Very important to initialize helm sdk settings before running API
 	err := utils.InitHelmSettings()

@@ -44,10 +44,10 @@ func InitHelmSettings() error {
 	return nil
 }
 
-func RenderHelmTemplate(helmChartPath HelmChartPath) (map[string]string, error) {
-	Client.ChartPathOptions.RepoURL = helmChartPath.RepoURL
+func RenderHelmTemplate(helmChartSource HelmChartSource) (map[string]string, error) {
+	Client.ChartPathOptions.RepoURL = helmChartSource.RepoURL
 
-	chartPath, err := Client.LocateChart(helmChartPath.ChartPath, Settings)
+	chartPath, err := Client.LocateChart(helmChartSource.ChartRef, Settings)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,15 @@ func RenderHelmTemplate(helmChartPath HelmChartPath) (map[string]string, error) 
 		return nil, err
 	}
 
-	valsToRender, err := chartutil.ToRenderValues(chrt, chrt.Values, chartutil.ReleaseOptions{}, chartutil.DefaultCapabilities)
+	valsToRender, err := chartutil.ToRenderValues(
+		chrt,
+		chrt.Values,
+		chartutil.ReleaseOptions{},
+		chartutil.DefaultCapabilities,
+	)
+	if err != nil {
+		return nil, err
+	}
 
 	render, err := engine.Render(chrt, valsToRender)
 	if err != nil {

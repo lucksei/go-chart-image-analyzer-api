@@ -20,6 +20,7 @@ type HelmChartResponse struct {
 }
 
 type ChartImage struct {
-	Name string `json:"name"`
-	Tag  string `json:"tag"`
+	Name        string `json:"name"`
+	Size        int64  `json:"size"`
+	LayerNumber int    `json:"layer_number"`
 }

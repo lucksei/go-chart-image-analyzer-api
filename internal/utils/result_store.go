@@ -7,12 +7,8 @@ import (
 	"sync"
 )
 
-type HelmChartPath struct {
-	RepoURL   string `json:"repo_url"`
-	ChartPath string `json:"chart_path"`
-}
-
-func (h HelmChartPath) ToBase64Id() (string, error) {
+// Create a unique ID for the helm chart source
+func (h HelmChartSource) ToBase64Id() (string, error) {
 	jsonDataBytes, err := json.Marshal(h)
 	if err != nil {
 		return "", err
@@ -21,79 +17,96 @@ func (h HelmChartPath) ToBase64Id() (string, error) {
 	return str, nil
 }
 
-func Base64StringToHelmChart(base64Data string) (HelmChartPath, error) {
+// Convert the unique ID back to the helm chart source
+func Base64StringToHelmChart(base64Data string) (HelmChartSource, error) {
 	dataBytes, err := base64.StdEncoding.DecodeString(base64Data)
 	fmt.Printf("%s\n", dataBytes)
 	if err != nil {
-		return HelmChartPath{}, err
+		return HelmChartSource{}, err
 	}
-	var h HelmChartPath
+	var h HelmChartSource
 	err = json.Unmarshal(dataBytes, &h)
 	fmt.Printf("%v\n", h)
 	if err != nil {
-		return HelmChartPath{}, err
+		return HelmChartSource{}, err
 	}
 	return h, nil
 }
 
-type HelmChartResult struct {
-	RepoURL   string        `json:"repo_url"`
-	ChartPath string        `json:"chart_path"`
-	Images    []ImageResult `json:"images"`
+type Status int
+
+const (
+	StatusSuccess    Status = 0
+	StatusNotFound   Status = 1
+	StatusInProgress Status = 2
+)
+
+type StoredResult struct {
+	Value  HelmChartAnalysis
+	Status Status
 }
 
 type ResultStore struct {
 	mu    sync.Mutex
-	store map[string]HelmChartResult
+	store map[string]StoredResult
 }
 
 func NewResultStore() *ResultStore {
 	resultStore := &ResultStore{
-		store: map[string]HelmChartResult{},
+		store: map[string]StoredResult{},
 	}
 	return resultStore
 }
 
-func (r *ResultStore) Get(key string) (HelmChartResult, bool) {
+func (r *ResultStore) Get(key string) (HelmChartAnalysis, Status) {
 	r.mu.Lock()
-	orig, ok := r.store[key]
+	res, ok := r.store[key]
 	r.mu.Unlock()
 	if !ok {
-		return HelmChartResult{}, false
+		return HelmChartAnalysis{}, StatusNotFound
 	}
+	if res.Status == StatusInProgress {
+		return HelmChartAnalysis{}, StatusInProgress
+	}
+
 	// TODO: Use a damn library for deep copying next time...
-	newCopy := HelmChartResult{
-		RepoURL:   orig.RepoURL,
-		ChartPath: orig.ChartPath,
+	orig := res.Value
+	newCopy := HelmChartAnalysis{
+		RepoURL:  orig.RepoURL,
+		ChartRef: orig.ChartRef,
 	}
-	for _, img := range orig.Images {
-		newCopy.Images = append(newCopy.Images, ImageResult{
-			img.Name,
-			img.Size,
-			img.LayerNumber,
-		})
-	}
-	return newCopy, true
+	copy(newCopy.Images, orig.Images)
+	return newCopy, StatusSuccess
 }
 
-func (r *ResultStore) Put(key string, v HelmChartResult) error {
+func (r *ResultStore) Put(key string, v HelmChartAnalysis) {
 	r.mu.Lock()
 
-	newCopy := HelmChartResult{
-		RepoURL:   v.RepoURL,
-		ChartPath: v.ChartPath,
+	newCopy := HelmChartAnalysis{
+		RepoURL:  v.RepoURL,
+		ChartRef: v.ChartRef,
 	}
-	images := []ImageResult{}
+	images := []ImageAnalysis{}
 	for _, img := range v.Images {
-		images = append(images, ImageResult{
+		images = append(images, ImageAnalysis{
 			Name:        img.Name,
 			Size:        img.Size,
 			LayerNumber: img.LayerNumber,
 		})
 	}
 	newCopy.Images = images
-	r.store[key] = newCopy
+	r.store[key] = StoredResult{
+		Value:  newCopy,
+		Status: StatusSuccess,
+	}
 
 	r.mu.Unlock()
-	return nil
+}
+
+func (r *ResultStore) SetPending(key string) {
+	r.mu.Lock()
+	r.store[key] = StoredResult{
+		Status: StatusInProgress,
+	}
+	r.mu.Unlock()
 }
