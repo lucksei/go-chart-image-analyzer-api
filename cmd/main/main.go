@@ -1,11 +1,10 @@
 package main
 
 import (
-	"test/go_helm_chart_image_api/internal/routes"
-	"test/go_helm_chart_image_api/internal/utils"
-	"test/go_helm_chart_image_api/middleware"
-
 	"github.com/gin-gonic/gin"
+	"github.com/lucksei/go-chart-image-analyzer-api/internal/routes"
+	"github.com/lucksei/go-chart-image-analyzer-api/internal/utils"
+	"github.com/lucksei/go-chart-image-analyzer-api/middleware"
 )
 
 func main() {

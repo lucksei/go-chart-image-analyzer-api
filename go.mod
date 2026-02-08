@@ -1,4 +1,4 @@
-module test/go_helm_chart_image_api
+module github.com/lucksei/go-chart-image-analyzer-api
 
 go 1.25.6
 

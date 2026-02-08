@@ -1,9 +1,8 @@
 package middleware
 
 import (
-	"test/go_helm_chart_image_api/internal/utils"
-
 	"github.com/gin-gonic/gin"
+	"github.com/lucksei/go-chart-image-analyzer-api/internal/utils"
 )
 
 // Simply stores the ResultStore item in the Gin context for use inside the routes

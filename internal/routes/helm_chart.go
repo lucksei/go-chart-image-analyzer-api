@@ -3,10 +3,10 @@ package routes
 import (
 	"fmt"
 	"net/http"
-	"test/go_helm_chart_image_api/internal/models"
-	"test/go_helm_chart_image_api/internal/utils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/lucksei/go-chart-image-analyzer-api/internal/models"
+	"github.com/lucksei/go-chart-image-analyzer-api/internal/utils"
 )
 
 func HelmChartPost(c *gin.Context) {
