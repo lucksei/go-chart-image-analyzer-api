@@ -1,9 +1,9 @@
 package utils
 
 type ImageAnalysis struct {
-	Name        string `json:"name"`
-	Size        int64  `json:"size"`
-	LayerNumber int    `json:"layer_number"`
+	Name           string `json:"name"`
+	Size           int64  `json:"size"`
+	NumberOfLayers int    `json:"no_of_layers"`
 }
 
 type HelmChartSource struct {

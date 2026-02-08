@@ -24,7 +24,7 @@ func PullImageAndParseAPIInfo(image string) (ImageAnalysis, error) {
 		return ImageAnalysis{}, err
 	}
 
-	imageAnalysis.LayerNumber = len(manifest.Layers)
+	imageAnalysis.NumberOfLayers = len(manifest.Layers)
 
 	for _, layer := range manifest.Layers {
 		imageAnalysis.Size += layer.Size
