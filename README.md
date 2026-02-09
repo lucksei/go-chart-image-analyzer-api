@@ -15,7 +15,7 @@ go run ./cmd/main
 Build
 
 ```sh
-go build ./cmd/main -o go-chart-image-analyzer-api
+go build ./cmd/main -o
 ```
 
 ## API Endpoints

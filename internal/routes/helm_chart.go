@@ -31,7 +31,6 @@ func HelmChartPost(c *gin.Context) {
 		c.Error(err)
 		return
 	}
-
 	// If the helm chart is being processed, accept (202)
 	_, status := rs.Get(helmChartId)
 	if status == utils.StatusInProgress {
@@ -45,6 +44,15 @@ func HelmChartPost(c *gin.Context) {
 		c.Status(http.StatusSeeOther)
 		return
 	}
+	// If the helm chart failed to be processed, return 500 and delete the entry to start again at the next request
+	if status == utils.StatusError {
+		rs.Delete(helmChartId)
+		c.Writer.Header().Set("Location", fmt.Sprintf("/api/helm-chart/%s", helmChartId))
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Error processing the helm chart",
+		})
+		return
+	}
 
 	// Runs in the background, processes the helm chart + images if they are not already inside the store
 	rs.SetPending(helmChartId)
@@ -52,9 +60,10 @@ func HelmChartPost(c *gin.Context) {
 		fmt.Printf("Processing helm chart %s\n", helmChartSource.ChartRef)
 		rendered, err := utils.RenderHelmTemplate(helmChartSource)
 		if err != nil {
-			rs.UnsetPending(helmChartId)
-			c.Status(500)
-			c.Error(err)
+			rs.SetError(helmChartId)
+			fmt.Printf("Error rendering helm chart %s: %v", helmChartSource.ChartRef, err)
+			r, _ := rs.Get(helmChartId)
+			fmt.Printf("%v\n", r)
 			return
 		}
 
@@ -69,9 +78,8 @@ func HelmChartPost(c *gin.Context) {
 		for i, image := range images {
 			imageAnalysis, err := utils.PullImageAndParseAPIInfo(image)
 			if err != nil {
-				rs.UnsetPending(helmChartId)
-				c.Status(500)
-				c.Error(err)
+				rs.SetError(helmChartId)
+				fmt.Printf("Error processing image %d: %v\n", i, err)
 				return
 			}
 			fmt.Printf("Image %d: %s\n", i, imageAnalysis.Name)

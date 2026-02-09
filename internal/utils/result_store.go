@@ -39,6 +39,7 @@ const (
 	StatusSuccess    Status = 0
 	StatusNotFound   Status = 1
 	StatusInProgress Status = 2
+	StatusError      Status = 3
 )
 
 type StoredResult struct {
@@ -67,6 +68,9 @@ func (r *ResultStore) Get(key string) (HelmChartAnalysis, Status) {
 	}
 	if res.Status == StatusInProgress {
 		return HelmChartAnalysis{}, StatusInProgress
+	}
+	if res.Status == StatusError {
+		return HelmChartAnalysis{}, StatusError
 	}
 
 	// TODO: Use a damn library for deep copying next time...
@@ -105,7 +109,15 @@ func (r *ResultStore) SetPending(key string) {
 	r.mu.Unlock()
 }
 
-func (r *ResultStore) UnsetPending(key string) {
+func (r *ResultStore) SetError(key string) {
+	r.mu.Lock()
+	r.store[key] = StoredResult{
+		Status: StatusError,
+	}
+	r.mu.Unlock()
+}
+
+func (r *ResultStore) Delete(key string) {
 	r.mu.Lock()
 	delete(r.store, key)
 	r.mu.Unlock()
