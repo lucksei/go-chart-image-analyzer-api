@@ -9,6 +9,8 @@ import (
 
 func main() {
 	router := gin.Default()
+	router.SetTrustedProxies([]string{"127.0.0.1"})
+
 	router.Use(middleware.ErrorHandler())
 
 	// NOTE: Initialize the result store BEFORE defining the methods, it will panic if not.
@@ -29,6 +31,6 @@ func main() {
 		panic(err)
 	}
 
-	router.Run()
+	router.Run(":8080")
 
 }
